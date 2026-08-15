@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>PDF 排版助手</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23fafafa'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-size='14' font-weight='700' fill='%23050505' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <div class="avatar-cluster" aria-hidden="true">
+          <span class="avatar">P</span>
+          <span class="avatar">D</span>
+          <span class="avatar">F</span>
+        </div>
+        <div class="brand-text">
+          <h1 class="display-title">PDF 排版助手</h1>
+          <p class="display-sub">批量打印預處理 · 份數 / 雙面 / 橫轉直</p>
+        </div>
+      </div>
+      <div class="header-side">
+        <p class="header-count"><span id="headerDocs">0</span>&nbsp;文件</p>
+        <p class="header-note">離線處理 · 唔會上傳</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <nav class="seg seg-tabs" role="tablist" aria-label="主要檢視">
+      <button class="seg-item" role="tab" aria-selected="true" data-tab="docs">文件設定</button>
+      <button class="seg-item" role="tab" aria-selected="false" data-tab="output">輸出預覽</button>
+      <span class="seg-indicator" aria-hidden="true"></span>
+    </nav>
+
+    <section id="tab-docs" class="tab-panel enter" role="tabpanel" aria-label="文件設定">
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="上傳 PDF 文件">
+        <div class="dz-badge" aria-hidden="true">PDF</div>
+        <p class="dz-title">拖放 PDF 到呢度</p>
+        <p class="dz-sub">或者</p>
+        <button class="btn" type="button" id="pickBtn">選擇文件</button>
+        <p class="dz-hint">支援多選，一次最多 30 份</p>
+        <input type="file" id="fileInput" accept="application/pdf,.pdf" multiple hidden>
+      </div>
+
+      <div id="docList" class="doc-list" hidden></div>
+
+      <div class="empty-note" id="emptyNote" hidden>未上傳任何文件</div>
+
+      <footer class="summary-bar" id="summaryBar" hidden>
+        <div class="summary-stats">
+          <span class="stat"><b id="statDocs">0</b> 文件</span>
+          <span class="stat"><b id="statPages">0</b> 頁</span>
+          <span class="stat"><b id="statSheets">0</b> 張紙</span>
+        </div>
+        <div class="summary-actions">
+          <button class="btn btn-ghost" type="button" id="clearBtn">清空</button>
+          <button class="btn btn-primary" type="button" id="exportBtn">生成輸出</button>
+        </div>
+      </footer>
+    </section>
+
+    <section id="tab-output" class="tab-panel" role="tabpanel" aria-label="輸出預覽" hidden>
+      <div class="empty-state" id="outputEmpty">
+        <p class="empty-title">尚未生成輸出</p>
+        <p class="meta">喺「文件設定」揀好份數同設定之後，撳「生成輸出」</p>
+        <button class="btn" type="button" id="goDocsBtn">返去設定</button>
+      </div>
+      <div id="outputWrap" hidden>
+        <div class="output-head">
+          <div class="output-heading">
+            <p class="overline">輸出檔案</p>
+            <h2 class="output-name" id="outName">output.pdf</h2>
+            <p class="meta" id="outStats"></p>
+          </div>
+          <button class="btn btn-primary" type="button" id="downloadBtn">下載 PDF</button>
+        </div>
+        <div id="outputViewer" class="viewer-slot"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer container">
+    <p>所有 PDF 處理都喺瀏覽器本地完成，唔會上傳任何檔案。</p>
+  </footer>
+
+  <div class="modal-backdrop" id="previewModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-label="PDF 預覽">
+      <header class="modal-head">
+        <h2 class="modal-title" id="previewTitle">預覽</h2>
+        <button class="btn btn-icon" type="button" data-action="close-modal" aria-label="關閉">×</button>
+      </header>
+      <div class="modal-body" id="previewBody"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="progressOverlay" hidden>
+    <div class="overlay-panel">
+      <p class="overlay-title">處理緊…</p>
+      <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+      <p class="overlay-sub" id="progressText">0 / 0</p>
+    </div>
+  </div>
+
+  <script src="libs/pdf.min.js"></script>
+  <script src="libs/pdf-lib.min.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
