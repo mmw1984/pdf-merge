@@ -194,7 +194,7 @@ body {
   position: absolute;
   top: 4px;
   bottom: 4px;
-  left: 4px;
+  left: 0;
   width: 0;
   background: var(--surface-active);
   border-radius: 9px;

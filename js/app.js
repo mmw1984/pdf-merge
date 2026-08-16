@@ -134,6 +134,10 @@
 
     window.addEventListener("resize", debounce(function () {
       viewers.forEach(function (v) { v.refresh(); });
+      $$(".seg").forEach(function (seg) {
+        var sel = seg.querySelector('.seg-item[aria-selected="true"]');
+        if (sel) moveIndicator(seg, sel);
+      });
     }, 200));
   }
 
