@@ -88,6 +88,27 @@
       if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
     });
 
+    ["dragover", "drop"].forEach(function (ev) {
+      document.addEventListener(ev, function (e) {
+        e.preventDefault();
+      });
+    });
+    document.addEventListener("drop", function (e) {
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+        var dz = els.dropzone;
+        if (dz && dz.contains(e.target)) return;
+        addFiles(e.dataTransfer.files);
+      }
+    });
+    document.addEventListener("dragenter", function (e) {
+      if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.indexOf("Files") !== -1) {
+        els.dropzone.classList.add("dragover");
+      }
+    });
+    document.addEventListener("dragleave", function (e) {
+      if (e.target === document.documentElement) els.dropzone.classList.remove("dragover");
+    });
+
     els.clearBtn.addEventListener("click", clearAll);
     els.exportBtn.addEventListener("click", runExport);
     els.goDocsBtn.addEventListener("click", function () { switchTab("docs"); });
@@ -122,11 +143,15 @@
     var files = Array.prototype.filter.call(fileList, function (f) {
       return f.type === "application/pdf" || /\.pdf$/i.test(f.name);
     });
-    if (!files.length) return;
+    if (!files.length) {
+      alert("請選擇 PDF 文件。");
+      return;
+    }
     if (state.docs.length + files.length > 60) {
       alert("每次最多處理 60 份文件。");
       return;
     }
+    var failed = [];
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
       try {
@@ -143,10 +168,14 @@
         appendRow(doc);
       } catch (err) {
         console.error("讀取失敗：", file.name, err);
+        failed.push(file.name);
       }
     }
     updateSummary();
     if (state.docs.length) switchTab("docs");
+    if (failed.length) {
+      alert("無法讀取 " + failed.length + " 份文件：" + failed.join("、"));
+    }
   }
 
   function appendRow(doc) {
@@ -309,7 +338,8 @@
 
   function estFor(doc) {
     var unit = unitLenFor(doc);
-    return { unit: unit, pages: unit * doc.settings.copies, sheets: Math.ceil(unit / 2) * doc.settings.copies };
+    var sheetUnit = doc.settings.side === "duplex" ? Math.ceil(unit / 2) : unit;
+    return { unit: unit, pages: unit * doc.settings.copies, sheets: sheetUnit * doc.settings.copies };
   }
 
   function updateRow(doc) {
@@ -463,7 +493,9 @@
     els.outName.textContent = name;
     els.outStats.textContent = state.docs.length + " 份文件 · " + totalPages.toLocaleString("en-US") + " 頁 · " + totalSheets.toLocaleString("en-US") + " 張 · " + sideText + " · " + colorText;
     els.outputViewer.innerHTML = "";
+    if (outputViewer) { outputViewer.destroy(); outputViewer = null; }
     var viewer = createViewer();
+    outputViewer = viewer;
     els.outputViewer.appendChild(viewer.el);
     viewer.load(out.bytes);
   }
@@ -486,11 +518,13 @@
     els.outputWrap.hidden = true;
     els.outputEmpty.hidden = false;
     els.outputViewer.innerHTML = "";
+    if (outputViewer) { outputViewer.destroy(); outputViewer = null; }
   }
 
   /* ---------- preview modal ---------- */
 
   var modalViewer = null;
+  var outputViewer = null;
 
   function openPreview(id) {
     var doc = getDoc(id);
@@ -568,6 +602,7 @@
     }
 
     async function load(bytes) {
+      if (renderTask) { try { renderTask.cancel(); } catch (e) {} renderTask = null; }
       try { if (pdf) pdf.destroy(); } catch (e) {}
       pdf = null;
       var st = stage();

@@ -73,7 +73,7 @@
   function firstPageSize(src) {
     if (src.getPageCount() === 0) return A4;
     var g = pageGeometry(src.getPage(0));
-    return { w: g.effW, h: g.effH };
+    return { w: g.W, h: g.H };
   }
 
   async function processBatch(items, onProgress) {
@@ -99,7 +99,8 @@
         var added = await out.copyPages(out, idxs);
         for (var p = 0; p < added.length; p++) out.addPage(added[p]);
       }
-      report.push({ name: item.name, unitLen: unitLen, padded: needPad, copies: item.copies, total: unitLen * item.copies, sheets: Math.ceil(unitLen / 2) * item.copies });
+      var sheetUnit = item.duplex ? Math.ceil(unitLen / 2) : unitLen;
+      report.push({ name: item.name, unitLen: unitLen, padded: needPad, copies: item.copies, total: unitLen * item.copies, sheets: sheetUnit * item.copies });
       if (onProgress) onProgress({ done: i + 1, total: items.length });
       await new Promise(function (r) { setTimeout(r, 0); });
     }
