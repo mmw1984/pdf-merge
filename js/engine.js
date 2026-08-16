@@ -76,6 +76,11 @@
     return { w: g.W, h: g.H };
   }
 
+  function pageBoxSize(src, idx) {
+    var g = pageGeometry(src.getPage(idx));
+    return { w: g.W, h: g.H };
+  }
+
   async function processBatch(items, onProgress) {
     var out = await PDFDocument.create();
     var report = [];
@@ -83,15 +88,26 @@
       var item = items[i];
       var src = await PDFDocument.load(item.bytes, { ignoreEncryption: true });
       var unitStart = out.getPageCount();
-      for (var idx = 0; idx < src.getPageCount(); idx++) {
-        await appendPage(out, src, idx, item.autoPortrait);
-      }
-      var unitLen = out.getPageCount() - unitStart;
-      var needPad = item.duplex && unitLen % 2 === 1;
-      if (needPad) {
-        var bs = item.autoPortrait ? A4 : firstPageSize(src);
-        out.addPage([bs.w, bs.h]);
-        unitLen += 1;
+      var count = src.getPageCount();
+      if (item.duplex) {
+        for (var idx = 0; idx < count; idx++) {
+          await appendPage(out, src, idx, item.autoPortrait);
+        }
+        var unitLen = out.getPageCount() - unitStart;
+        var needPad = unitLen % 2 === 1;
+        if (needPad) {
+          var bs = item.autoPortrait ? A4 : firstPageSize(src);
+          out.addPage([bs.w, bs.h]);
+          unitLen += 1;
+        }
+      } else {
+        for (var idx = 0; idx < count; idx++) {
+          await appendPage(out, src, idx, item.autoPortrait);
+          var bs = item.autoPortrait ? A4 : pageBoxSize(src, idx);
+          out.addPage([bs.w, bs.h]);
+        }
+        var unitLen = out.getPageCount() - unitStart;
+        var needPad = false;
       }
       for (var c = 1; c < item.copies; c++) {
         var idxs = new Array(unitLen);
@@ -99,7 +115,7 @@
         var added = await out.copyPages(out, idxs);
         for (var p = 0; p < added.length; p++) out.addPage(added[p]);
       }
-      var sheetUnit = item.duplex ? Math.ceil(unitLen / 2) : unitLen;
+      var sheetUnit = Math.ceil(unitLen / 2);
       report.push({ name: item.name, unitLen: unitLen, padded: needPad, copies: item.copies, total: unitLen * item.copies, sheets: sheetUnit * item.copies });
       if (onProgress) onProgress({ done: i + 1, total: items.length });
       await new Promise(function (r) { setTimeout(r, 0); });

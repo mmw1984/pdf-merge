@@ -211,6 +211,7 @@
             '<span class="dot"></span>' +
             '<span data-meta-orient></span>' +
             '<span class="chip" data-chip-pad hidden>補 1 頁空白</span>' +
+            '<span class="chip" data-chip-simplex hidden>每頁後補 1 頁空白</span>' +
             '<span class="chip chip-warn" data-hint-orient hidden>橫向 → 轉直向</span>' +
           "</div>" +
         "</div>" +
@@ -337,12 +338,13 @@
 
   function unitLenFor(doc) {
     var n = doc.analysis.pageCount;
-    return doc.settings.side === "duplex" && n % 2 === 1 ? n + 1 : n;
+    if (doc.settings.side === "duplex") return n % 2 === 1 ? n + 1 : n;
+    return n * 2;
   }
 
   function estFor(doc) {
     var unit = unitLenFor(doc);
-    var sheetUnit = doc.settings.side === "duplex" ? Math.ceil(unit / 2) : unit;
+    var sheetUnit = Math.ceil(unit / 2);
     return { unit: unit, pages: unit * doc.settings.copies, sheets: sheetUnit * doc.settings.copies };
   }
 
@@ -353,6 +355,8 @@
     doc._row.querySelector("[data-est-sub]").textContent = "約 " + est.sheets + " 張";
     var padChip = doc._row.querySelector("[data-chip-pad]");
     if (padChip) padChip.hidden = !(doc.settings.side === "duplex" && doc.analysis.pageCount % 2 === 1);
+    var simplexChip = doc._row.querySelector("[data-chip-simplex]");
+    if (simplexChip) simplexChip.hidden = doc.settings.side !== "simplex";
     var hint = doc._row.querySelector("[data-hint-orient]");
     if (hint) hint.hidden = !(doc.settings.orient === "auto" && doc.analysis.landscape > 0);
   }
